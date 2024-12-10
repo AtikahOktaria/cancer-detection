@@ -1,4 +1,4 @@
-require('dotenv').config(); // Pastikan .env dimuat
+require('dotenv').config();
 const tf = require('@tensorflow/tfjs-node');
 const Hapi = require('@hapi/hapi');
 const { Firestore } = require('@google-cloud/firestore');
@@ -6,7 +6,6 @@ const { ClientIssue, InputIssue } = require('./error');
 const predictClassification = require('./predict');
 const crypto = require('crypto');
 
-// Load model from environment-specified URL
 async function loadModel() {
     try {
         console.log('Loading model from:', process.env.MODEL_URL);
@@ -30,7 +29,6 @@ async function storeData(id, data) {
     }
 }
 
-// Handle prediction requests
 async function postPredictHandler(request, h) {
     const { image } = request.payload;
     const { model } = request.server.app;
@@ -66,7 +64,6 @@ async function postPredictHandler(request, h) {
     }
 }
 
-// Handle get histories requests
 async function getHistoriesHandler(request, h) {
     const db = new Firestore();
     const predictCollection = db.collection('predictions');
@@ -90,15 +87,14 @@ async function getHistoriesHandler(request, h) {
         return h.response({
             status: 'fail',
             message: 'Unable to fetch prediction histories',
-        }).code(500); // Internal Server Error
+        }).code(500); 
     }
 }
 
-// Server Initialization
 (async () => {
     const server = Hapi.server({
-        port: 8080,
-        host: '0.0.0.0',
+        port: 8000,
+        host: 'localhost',
         routes: {
             cors: { origin: ['*'] },
         },
@@ -129,11 +125,9 @@ async function getHistoriesHandler(request, h) {
             },
         ]);
 
-        // Unified error handling
         server.ext('onPreResponse', (request, h) => {
             const response = request.response;
 
-            // Handle custom errors
             if (response instanceof ClientIssue) {
                 return h.response({
                     status: 'fail',
@@ -141,7 +135,6 @@ async function getHistoriesHandler(request, h) {
                 }).code(response.statusCode);
             }
 
-            // Handle internal errors (Boom errors)
             if (response.isBoom) {
                 console.error('Server error:', response.message);
                 return h.response({
